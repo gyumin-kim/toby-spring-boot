@@ -2,6 +2,8 @@ package tobyspring.helloboot;
 
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServer;
+import org.springframework.boot.web.servlet.server.ServletWebServerFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -12,6 +14,15 @@ import org.springframework.web.servlet.DispatcherServlet;
 // @Configuration: @Bean 설정 정보가 포함된 클래스임을 Spring container에 알리기 위함
 @Configuration
 public class HellobootApplication {
+	@Bean
+	public ServletWebServerFactory servletWebServerFactory() {
+		return new TomcatServletWebServerFactory();
+	}
+
+	@Bean
+	public DispatcherServlet dispatcherServlet() {
+		return new DispatcherServlet();
+	}
 
 	public static void main(String[] args) {
 		// Spring container
@@ -20,9 +31,11 @@ public class HellobootApplication {
 			protected void onRefresh() {
 				super.onRefresh();
 				// Servlet container
-				TomcatServletWebServerFactory tomcatServletWebServerFactory = new TomcatServletWebServerFactory();
-				WebServer webServer = tomcatServletWebServerFactory.getWebServer(
-					servletContext -> servletContext.addServlet("dispatcherServlet", new DispatcherServlet(this))
+				ServletWebServerFactory serverFactory = this.getBean(ServletWebServerFactory.class);
+				DispatcherServlet dispatcherServlet = this.getBean(DispatcherServlet.class);
+				// DispatcherServlet은 ApplicationContextAware의 구현체이므로, setApplicationContext()를 통해 ApplicationContext를 주입 받음
+				WebServer webServer = serverFactory.getWebServer(
+					servletContext -> servletContext.addServlet("dispatcherServlet", dispatcherServlet)
 													.addMapping("/*")    // front controller url mapping
 				);
 				webServer.start();
